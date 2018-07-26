@@ -9,7 +9,7 @@ function getTotal(list) {
     for(var key in list){
         total += list[key].value * list[key].amount;
     }
-
+    document.getElementById("totalValue").innerHTML = formatValue(total);
     return total;
 }
 
@@ -18,20 +18,26 @@ function setList(list) {
     '<td>Value</td><td>Action</td></tr></thead><tbody>';
 
     for (var key in list) {
-        table += '<tr><td>'+ formatDesc(list[key].desc) +'</td><td>'+ list[key].amount +'</td>'+
-        '<td>'+ formatValue(list[key].value) +'</td><td><button class="btn btn-default"onclick="setUpdate('+key+')">Edit</button> | Delete</td></tr>';
+        table += '<tr><td>'+ formatDesc(list[key].desc) +'</td><td>'+ formatAmount(list[key].amount) +'</td>'+
+        '<td>'+ formatValue(list[key].value) +'</td><td><button class="btn btn-default"onclick="setUpdate('+key+')">Edit</button> | <button class="btn btn-danger"onclick="deleteData('+key+')">Delete</button></td></tr>';
         
     }
 
     table += '</tbody>'
 
-    document.getElementById("listTable").innerHTML = table;  
+    document.getElementById("listTable").innerHTML = table;
+    getTotal(list);
+    saveListStorage(list);
 }
 
 function formatDesc(desc) {
     var str = desc.toLowerCase();
     str = str.charAt(0).toUpperCase() + str.slice(1);
     return str;
+}
+
+function formatAmount(amount) {
+   return parseInt(amount);
 }
 
 function formatValue(value) {
@@ -42,6 +48,9 @@ function formatValue(value) {
 }
 
 function addData() {
+    if (!validation()) {
+        return;
+    }
     var desc = document.getElementById("desc").value;
     var amount = document.getElementById("amount").value;
     var value = document.getElementById("value").value;
@@ -49,6 +58,11 @@ function addData() {
     list.unshift({"desc": desc, "amount": amount, "value": value});
 
     setList(list);
+
+    document.getElementById("desc").value = "";
+    document.getElementById("amount").value = "";
+    document.getElementById("value").value = "";
+    document.getElementById("errors").style.display = "none";
 }
 
 function setUpdate(id) {
@@ -70,9 +84,13 @@ function resetForm() {
     document.getElementById("btnAdd").style.display = "inline-block";
 
     document.getElementById("inputIDUpdate").innerHTML = "";
+    document.getElementById("errors").style.display = "none";
 }
 
 function updateData() {
+    if (!validation()) {
+        return;
+    }
     var id = document.getElementById("idUpdate").value;
     var desc = document.getElementById("desc").value;
     var amount = document.getElementById("amount").value;
@@ -83,5 +101,63 @@ function updateData() {
     setList(list);
 }
 
-setList(list);
-console.log(getTotal(list));
+function deleteData(id) {
+    
+    if(confirm("Delete this item?")){
+        list.splice(id,1);
+        
+        setList(list);
+    }
+}
+
+function validation() {
+    var desc = document.getElementById("desc").value;
+    var amount = document.getElementById("amount").value;
+    var value = document.getElementById("value").value;
+    var errors = "";
+
+    if (desc === "") {
+        errors += '<p>Fill out description</p>';
+    }
+    if (amount === "") {
+        errors += '<p>Fill out a quantity</p>';
+    } else if(amount != parseInt(amount)){
+        errors += '<p>Fill out a valid amount</p>';
+    }
+    if (value === "") {
+        errors += '<p>Fill out a value</p>';
+    } else if(value != parseFloat(value)){
+        errors += '<p>Fill out a valid value</p>';
+    }
+
+    if (errors != "") {
+        document.getElementById("errors").style.display = "block";
+        document.getElementById("errors").innerHTML = "<h3>Error: </h3>" + errors;
+        return 0;
+    }else {
+        return 1;
+    }
+}
+
+function deleteList() {
+    if (confirm("Delete this list?")) {
+        list = [];
+        setList(list);
+    }
+}
+
+function saveListStorage(list) {
+    var jsonStr = JSON.stringify(list);
+    localStorage.setItem("list", jsonStr);
+}
+
+function initListStorage() {
+    var testList = localStorage.getItem("list");
+    if (testList) {
+        list = JSON.parse(testList);
+    }
+
+    setList(list);
+}
+
+initListStorage();
